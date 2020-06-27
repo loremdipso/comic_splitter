@@ -1,0 +1,12 @@
+[package]
+name = "comic_splitter"
+version = "0.1.0"
+authors = ["madams <mtadams42@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+image = "0.23.6"
+chrono = "0.4.11"
+euclid = "0.20.13"

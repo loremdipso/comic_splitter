@@ -11,3 +11,8 @@ Cargo.lock
 
 test
 test/*
+
+
+#Added by cargo
+
+/target
