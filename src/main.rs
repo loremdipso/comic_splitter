@@ -68,17 +68,11 @@ fn split_color_buffer(mut input_buffer: DynamicImage, base_output_path: &Path) {
 fn get_split_regions(buffer: image::ImageBuffer<Luma<u8>, Vec<u8>>) -> Vec<Region> {
     let mut regions = Vec::new();
 
-    let width = 200;
-    let height = 200;
-    let x = 20;
-    let y = 20;
-
     let imgx = buffer.width();
     let imgy = buffer.height();
     let min_columns = 10;
     let mut column_count = 0;
     let mut current_y = 0;
-    let mut y = 0;
 
     for y in 0..imgy {
         let mut row_is_white = true;
@@ -91,6 +85,7 @@ fn get_split_regions(buffer: image::ImageBuffer<Luma<u8>, Vec<u8>>) -> Vec<Regio
             // let data = (*pixel as image::Rgb<u8>).0;
         }
 
+        // TODO: add minimum slice size
         if row_is_white {
             column_count += 1;
         } else {
