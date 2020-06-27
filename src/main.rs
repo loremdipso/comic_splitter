@@ -1,5 +1,6 @@
 use image::{DynamicImage, GenericImage, Luma};
 use std::env;
+use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::time::SystemTime;
@@ -8,6 +9,7 @@ fn main() {
     // Prints each argument on a separate line
     let mut todo = Vec::new();
     let mut output_dir: Option<String> = None;
+    let mut remove_original = false;
 
     let mut it = env::args().skip(1);
     while let Some(arg) = it.next() {
@@ -18,6 +20,9 @@ fn main() {
                 }
                 None => {}
             },
+            "-remove" | "-delete" | "--delete" | "--remove" | "--remove-original" => {
+                remove_original = true;
+            }
             _ => {
                 if Path::new(&arg).exists() {
                     todo.push(arg);
@@ -29,7 +34,7 @@ fn main() {
     if let Some(dir) = output_dir {
         for image in todo {
             let then = SystemTime::now();
-            split_image(dir.clone(), image.clone());
+            split_image(dir.clone(), image.clone(), remove_original);
             println!(
                 "Finished in {}ms",
                 SystemTime::now().duration_since(then).unwrap().as_millis()
@@ -38,7 +43,7 @@ fn main() {
     }
 }
 
-fn split_image(output_dir: String, image_path: String) {
+fn split_image(output_dir: String, image_path: String, remove_original: bool) {
     let base_output_path = &Path::new(&output_dir).join(
         Path::new(&image_path)
             .file_name()
@@ -47,11 +52,22 @@ fn split_image(output_dir: String, image_path: String) {
             .unwrap(),
     );
 
-    let original_buffer = image::open(image_path).ok().expect("Opening image failed");
-    split_color_buffer(original_buffer, &base_output_path);
+    let original_buffer = image::open(image_path.clone())
+        .ok()
+        .expect("Opening image failed");
+
+    let num_split = split_color_buffer(original_buffer, &base_output_path);
+    if num_split == 0 {
+        if remove_original {
+            println!("\tRemoving {}...", image_path);
+            fs::remove_file(Path::new(&image_path))
+                .ok()
+                .expect("ERROR DELETING FILE");
+        }
+    }
 }
 
-fn split_color_buffer(mut input_buffer: DynamicImage, base_output_path: &Path) {
+fn split_color_buffer(mut input_buffer: DynamicImage, base_output_path: &Path) -> usize {
     let grayscale_buffer = input_buffer.to_luma();
     // let mut buffers = Vec::new();
     let locs = get_split_regions(grayscale_buffer);
@@ -63,6 +79,8 @@ fn split_color_buffer(mut input_buffer: DynamicImage, base_output_path: &Path) {
         let output_path = add_file_suffix(base_output_path, index.to_string());
         sub_image.save(output_path).unwrap();
     }
+
+    return locs.len();
 }
 
 fn get_split_regions(buffer: image::ImageBuffer<Luma<u8>, Vec<u8>>) -> Vec<Region> {
@@ -107,14 +125,16 @@ fn get_split_regions(buffer: image::ImageBuffer<Luma<u8>, Vec<u8>>) -> Vec<Regio
         }
     }
 
-    // add rest of image
-    let region = Region {
-        width: imgx,
-        height: imgy - current_y,
-        x: 0,
-        y: current_y,
-    };
-    regions.push(region);
+    // add rest of image, but only if we did any splitting to begin with
+    if regions.len() > 0 {
+        let region = Region {
+            width: imgx,
+            height: imgy - current_y,
+            x: 0,
+            y: current_y,
+        };
+        regions.push(region);
+    }
 
     return regions;
 }
