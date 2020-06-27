@@ -7,5 +7,6 @@ Inspired by [Ajira-FR's comics-splitter](https://github.com/Ajira-FR/comics-spli
 
 # Performance
 
-Initial python script: ~1.5s for 2 pages
-Rust equivalent: ~0.5s for same 2 pages
+Initial python script: ~1500ms for 2 pages
+Rust single-threaded equivalent: ~540ms for same 2 pages
+Rust using rayon for multi-threading: ~300ms for same 2 pages

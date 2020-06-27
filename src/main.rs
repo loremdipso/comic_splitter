@@ -4,6 +4,7 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::time::SystemTime;
+use rayon::prelude::*;
 
 fn main() {
     // Prints each argument on a separate line
@@ -32,14 +33,14 @@ fn main() {
     }
 
     if let Some(dir) = output_dir {
-        for image in todo {
+        todo.par_iter().for_each(|image| {
             let then = SystemTime::now();
             split_image(dir.clone(), image.clone(), remove_original);
             println!(
                 "Finished in {}ms",
                 SystemTime::now().duration_since(then).unwrap().as_millis()
             );
-        }
+        });
     }
 }
 
