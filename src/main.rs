@@ -57,7 +57,7 @@ fn split_image(output_dir: String, image_path: String, remove_original: bool) {
         .expect("Opening image failed");
 
     let num_split = split_color_buffer(original_buffer, &base_output_path);
-    if num_split == 0 {
+    if num_split > 0 {
         if remove_original {
             println!("\tRemoving {}...", image_path);
             fs::remove_file(Path::new(&image_path))
@@ -89,6 +89,7 @@ fn get_split_regions(buffer: image::ImageBuffer<Luma<u8>, Vec<u8>>) -> Vec<Regio
     let imgx = buffer.width();
     let imgy = buffer.height();
     let min_columns = 10;
+    let min_height = 300;
     let mut column_count = 0;
     let mut current_y = 0;
 
@@ -110,6 +111,8 @@ fn get_split_regions(buffer: image::ImageBuffer<Luma<u8>, Vec<u8>>) -> Vec<Regio
             if column_count >= min_columns {
                 // doit
                 let temp_y = y - (column_count / 2);
+                let height = temp_y - current_y;
+                if height > min_height {
 
                 let region = Region {
                     width: imgx,
@@ -120,6 +123,7 @@ fn get_split_regions(buffer: image::ImageBuffer<Luma<u8>, Vec<u8>>) -> Vec<Regio
                 regions.push(region);
 
                 current_y = temp_y;
+                }
             }
             column_count = 0;
         }
