@@ -1,10 +1,10 @@
 use image::{DynamicImage, GenericImage, Luma};
+use rayon::prelude::*;
 use std::env;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::time::SystemTime;
-use rayon::prelude::*;
 
 fn main() {
     // Prints each argument on a separate line
@@ -24,9 +24,14 @@ fn main() {
             "-remove" | "-delete" | "--delete" | "--remove" | "--remove-original" => {
                 remove_original = true;
             }
+            "-help" | "--help" | "-h" => {
+                return usage();
+            }
             _ => {
                 if Path::new(&arg).exists() {
                     todo.push(arg);
+                } else {
+                    return bad_arg(arg);
                 }
             }
         }
@@ -41,7 +46,17 @@ fn main() {
                 SystemTime::now().duration_since(then).unwrap().as_millis()
             );
         });
+    } else {
+        println!("ERROR: no output directory");
     }
+}
+
+fn bad_arg(arg: String) {
+    println!("ERROR: {} is an unknown option", arg);
+}
+
+fn usage() {
+    println!("./me --output {{directory}} {{file1}} {{file2}} {{file3}}...");
 }
 
 fn split_image(output_dir: String, image_path: String, remove_original: bool) {
@@ -89,44 +104,52 @@ fn get_split_regions(buffer: image::ImageBuffer<Luma<u8>, Vec<u8>>) -> Vec<Regio
 
     let imgx = buffer.width();
     let imgy = buffer.height();
-    let min_columns = 10;
-    let min_height = 300;
-    let mut column_count = 0;
+    let bad_pixel_limit = imgx / 20; // 1 of every 20 pixels can be bad
+    let start_y = imgy / 5; // start 1/5 of the way down the image
+    let end_y = imgy - start_y; // end 4/5 of the way down the image
+
+    let min_white_rows = 10;
+    let min_height = imgy / 5;
+
+    let mut consecutive_empty_rows = 0;
     let mut current_y = 0;
 
-    for y in 0..imgy {
-        let mut row_is_white = true;
+    for y in start_y..end_y {
+        let mut num_bad_pixels = 0;
+        let mut row_is_empty = true;
         for x in 0..imgx {
+            // TODO: measure variation
             let pixel = buffer.get_pixel(x, y).0[0];
             if pixel < 250 {
-                row_is_white = false;
-                break;
+                num_bad_pixels += 1;
+                if num_bad_pixels > bad_pixel_limit {
+                    row_is_empty = false;
+                    break;
+                }
             }
-            // let data = (*pixel as image::Rgb<u8>).0;
         }
 
         // TODO: add minimum slice size
-        if row_is_white {
-            column_count += 1;
+        if row_is_empty {
+            consecutive_empty_rows += 1;
         } else {
-            if column_count >= min_columns {
+            if consecutive_empty_rows >= min_white_rows {
                 // doit
-                let temp_y = y - (column_count / 2);
+                let temp_y = y - (consecutive_empty_rows / 2);
                 let height = temp_y - current_y;
                 if height > min_height {
+                    let region = Region {
+                        width: imgx,
+                        height: temp_y - current_y,
+                        x: 0,
+                        y: current_y,
+                    };
+                    regions.push(region);
 
-                let region = Region {
-                    width: imgx,
-                    height: temp_y - current_y,
-                    x: 0,
-                    y: current_y,
-                };
-                regions.push(region);
-
-                current_y = temp_y;
+                    current_y = temp_y;
                 }
             }
-            column_count = 0;
+            consecutive_empty_rows = 0;
         }
     }
 
