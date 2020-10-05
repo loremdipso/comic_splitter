@@ -63,7 +63,7 @@ fn split_image(output_dir: String, image_path: String, remove_original: bool) {
     let base_output_path = &Path::new(&output_dir).join(
         Path::new(&image_path)
             .file_name()
-            .unwrap()
+            .expect(&format!("{} doesn't exist", image_path))
             .to_str()
             .unwrap(),
     );
@@ -85,7 +85,6 @@ fn split_image(output_dir: String, image_path: String, remove_original: bool) {
 
 fn split_color_buffer(mut input_buffer: DynamicImage, base_output_path: &Path) -> usize {
     let grayscale_buffer = input_buffer.to_luma();
-    // let mut buffers = Vec::new();
     let locs = get_split_regions(grayscale_buffer);
 
     for (index, loc) in locs.iter().enumerate() {
@@ -93,7 +92,9 @@ fn split_color_buffer(mut input_buffer: DynamicImage, base_output_path: &Path) -
             .sub_image(loc.x, loc.y, loc.width, loc.height)
             .to_image();
         let output_path = add_file_suffix(base_output_path, index.to_string());
-        sub_image.save(output_path).unwrap();
+        sub_image
+            .save(&output_path)
+            .expect(&format!("{:?} ", &output_path.as_os_str()));
     }
 
     return locs.len();
