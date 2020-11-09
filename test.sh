@@ -1,6 +1,7 @@
 #!/bin/bash
 
 cd ./test
+rm -rf ./output
 mkdir ./output &>/dev/null
 mkdir ./output/png &>/dev/null
 mkdir ./output/jpg &>/dev/null

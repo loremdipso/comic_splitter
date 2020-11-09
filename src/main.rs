@@ -92,6 +92,7 @@ fn split_color_buffer(mut input_buffer: DynamicImage, base_output_path: &Path) -
             .sub_image(loc.x, loc.y, loc.width, loc.height)
             .to_image();
         let output_path = add_file_suffix(base_output_path, index.to_string());
+        dbg!(&output_path);
         sub_image
             .save(&output_path)
             .expect(&format!("{:?} ", &output_path.as_os_str()));
