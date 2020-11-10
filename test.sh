@@ -9,10 +9,11 @@ mkdir ./output/jpg &>/dev/null
 set -e
 
 #image_name = "BROKEN.jpg"
-image_name="TB.jpg"
-time cargo run --release -- --black-lines ./input/$image_name --output ./output/jpg
+#image_name="TB.jpg"
+image_name="DIAG.png"
+cargo build --release
+#time cargo run --release -- --black-lines ./input/$image_name --output ./output/jpg
 #time cargo run --release -q ./input/BROKEN.jpg --output ./output/jpg
 
-#time cargo run --release -q ./input/*.jpg --output ./output/jpg
-#time cargo run --release -q ./input/*.png --output ./output/png
+time cargo run --release -q -- --black-lines ./input/*.jpg --output ./output/jpg
 
